@@ -1,20 +1,23 @@
 
+'use strict';
+
 const apiKey = 'NseftDiMJi8MAGYlzITQbCrWr5ZDpWNYGDYswbgg'; 
 const searchURL = 'https://developer.nps.gov/api/v1/parks';
 
 function formatQueryParams(params) {
     const queryItems = Object.keys(params)
-    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+    .map(key => `${encodeURIComponent(key)}=${params[key]}`)
     return queryItems.join('&');
 };
 
 function getNationalParks(query, maxResults=10) {
   const params = {
-    stateCode: query,
     limit: maxResults,
-    api_key: apiKey
+    api_key: apiKey,
+    stateCode: query
   };
-  const queryString = formatQueryParams(params)
+//   const state = "" // 'stateCode=' + query + '&';
+  const queryString = formatQueryParams(params);
   const url = searchURL + '?' + queryString;
   
   console.log(url);
@@ -28,6 +31,7 @@ function getNationalParks(query, maxResults=10) {
     })
     .then(responseJson => displayResults(responseJson))
     .catch(err => {
+        console.log(err)
         $('#results').removeClass('hidden');
         $('#js-error-message').text(`Something went wrong: ${err.message}`);
     });
@@ -37,13 +41,23 @@ function displayResults(responseJson) {
     console.log(responseJson)
     $('#results-list').empty();
     $('#results').removeClass('hidden');
-    for (let i = 0; i < responseJson.limit; i++)
+    for (let i = 0; i < responseJson.data.length; i++) {
+        let address = "No address provided.";
+        if (responseJson.data[i].addresses[0]) {
+            address = `${responseJson.data[i].addresses[0].line1}, ${responseJson.data[i].addresses[0].city}, ${responseJson.data[i].addresses[0].stateCode}, ${responseJson.data[i].addresses[0].postalCode}`
+        }
+        let image = "No image provided."
+        if (responseJson.data[i].images[0]) {
+            image = `<img src="${responseJson.data[i].images[0].url}">`
+        }
         $('#results-list').append(
-            `<li><h3><a href="${responseJson.data[i].url}">${responseJson.data[i].fullName}</a></h3>
-            <p>${responseJson.data[i].addresses[0].line1}, ${responseJson.data[i].addresses[0].city}, ${responseJson.data[i].addresses[0].stateCode}, ${responseJson.data[i].addresses[0].postalCode}</p>
-            <img src="${responseJson.data[i].images[0].url}">
+            `<li><h3><a href="${responseJson.data[i].url}" target="_blank">${responseJson.data[i].fullName}</a></h3>
+            <p>${address}</p>
+            ${image}
             <p>${responseJson.data[i].description}</p>`
         )
+    }
+        
 }
 
 function watchForm() {
